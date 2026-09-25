@@ -1,65 +1,103 @@
 # LLM State-Consistency Audit
 
-A small benchmark and harness for auditing whether an LLM-generated program
-preserves **global state consistency** across a sequence of dependent
-operations — the kind of bug that's invisible in isolated unit tests but
-shows up under compounding, cross-record effects, and is easy to eyeball as
-"looks right" when it silently isn't.
+A benchmark for one specific failure mode of LLM-written code: **losing track of
+global state across a sequence of dependent operations.**
 
-## Scenario
+Each scenario is a small simulation (a portfolio, a warehouse, a bank ledger)
+where several rules interact through shared state: a flag set by one event changes
+the next, costs compound after every step, fees depend on balances that other
+events just changed. Get one dependency stale or mistimed and the program still
+runs and still prints a plausible number. It is just wrong. Unit tests on isolated
+functions rarely catch this. This harness does.
 
-15 buy/sell transactions across 3 portfolios. A correct solution must track,
-simultaneously:
+## How it works
 
-1. **Price Modifier** — a BUY immediately after a *profitable* SELL costs 1% more.
-2. **Global Wealth Tax** — a 2% penalty on a sale's profit whenever total
-   wealth (cash + current market value of holdings) exceeds 10,000.
-3. **Holding Cost Drift** — every open lot's cost basis compounds by 0.1%
-   after *every* transaction.
+```
+prompt.md ──► model ──► reply ──► extracted run() ──► subprocess ──► value
+                                                                      │
+reference.py ────────────────────────────────────────────► expected ──┴─► pass / fail
+```
 
-Getting any one of these state dependencies stale or mistimed produces a
-silently wrong final number, with no exception raised — that's what this
-harness measures.
+1. `generate.py` sends each scenario's prompt to the models you choose and saves
+   the raw reply plus the extracted Python module under `submissions/`.
+2. `run_audit.py` executes every submission in a separate process (with a timeout),
+   compares `run()` with the reference answer and writes
+   [`reports/leaderboard.md`](reports/leaderboard.md).
 
-## Project layout
+A run **passes** only if it is within **0.01** of the reference. A wrong number,
+a crash, a timeout and a reply without code all count as failures. Run each
+model several times: one sample says little about a non-deterministic model.
 
-- `audit/scenario_data.py` — canonical transaction data (single source of truth).
-- `audit/reference.py` — the reference ("ground truth") solver.
-- `audit/discover.py` — auto-discovers model submissions in `models/`.
-- `audit/scorer.py` — scores each submission against the reference and renders `reports/analysis.md`.
-- `models/*.py` — one file per model submission. Each is self-contained (as
-  an LLM would hand it back) and exposes `MODEL_NAME` and `run() -> float`.
-- `data/generate_data.py` — exports the canonical scenario to `transactions.csv`.
-- `run_audit.py` — CLI entry point.
-- `reports/analysis.md` — generated leaderboard (overwritten on every run — don't hand-edit it).
+## Scenarios
+
+| Scenario | Interacting state | Reference |
+|---|---|---:|
+| [`portfolio`](bench/scenarios/portfolio/prompt.md) | FIFO lots across 3 portfolios, global "last sale was profitable" flag, wealth tax computed mid-transaction, cost drift after every transaction | 17072.00 |
+| [`warehouse`](bench/scenarios/warehouse/prompt.md) | Perishable batches (expiry, FEFO picking), backorders filled at a discount by later deliveries, automatic reorders with lead time | 622.67 |
+| [`ledger`](bench/scenarios/ledger/prompt.md) | Overdraft limit and fees, rejected debits, tiered daily interest accrued at full precision, period close with a minimum-balance fee waiver | 6553.73 |
+
+Every rule is load-bearing: the test suite switches each rule off in turn and
+checks that the reference answer changes (`tests/test_scenarios.py`).
 
 ## Usage
 
 ```bash
-pip install -r requirements.txt   # only needed for data/generate_data.py
-python run_audit.py
+pip install -r requirements.txt       # SDKs for the providers you use
+export ANTHROPIC_API_KEY=...          # and/or OPENAI_API_KEY, GEMINI_API_KEY
+
+# 3 runs per scenario for each model (provider:model_id)
+python generate.py anthropic:claude-opus-5 openai:<model-id> google:<model-id> --runs 3
+
+# local models through Ollama
+python generate.py ollama:qwen3-coder --scenario ledger --runs 5
+
+python run_audit.py                   # score everything, rewrite the leaderboard
 ```
 
-This runs the reference solver, runs every model in `models/`, and writes a
-ranked leaderboard to `reports/analysis.md`.
+Providers: `anthropic`, `openai`, `google`, `ollama`. New runs never overwrite old
+ones; they get the next free number.
 
-## Adding a new model submission
+> **Security:** submissions are model-generated code and run with your user's
+> permissions. The subprocess isolates crashes and infinite loops, not malicious
+> code. Run untrusted submissions in a container or VM.
 
-Drop a new file in `models/`, e.g. `models/claude_x.py`:
+## Adding a scenario
 
-```python
-MODEL_NAME = "Claude X"
+Create `bench/scenarios/<name>/` with:
 
-def run() -> float:
-    ...
-    return final_portfolio_value
+- `prompt.md` — the full specification the model sees, starting with a `# Title`.
+  It must be unambiguous: every ordering and rounding decision spelled out.
+- `reference.py` — a `run() -> float` that implements the spec exactly, with the
+  tunable rules as module-level constants (so the tests can switch them off).
+
+Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
+
+## Project layout
+
+```
+bench/
+  scenarios/<name>/    prompt.md + reference.py for each scenario
+  prompting.py         shared instructions wrapped around every prompt (versioned)
+  providers.py         Anthropic / OpenAI / Google / Ollama clients
+  extract.py           pulls the code block out of a reply
+  sandbox.py           runs a submission in a subprocess with a timeout
+  scoring.py           classifies every run: pass / wrong / error / timeout / no_code
+  report.py            renders the leaderboard
+submissions/<scenario>/<model>/run_N.{reply.md,py}
+generate.py            CLI: query models
+run_audit.py           CLI: score and report
 ```
 
-Re-run `python run_audit.py` — it's picked up automatically, scored, and ranked.
+## Development
 
-## Scoring
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
-```
-absolute_error = |model_result - reference_result|
-quality_score  = max(0, 1 - absolute_error / reference_result)
-```
+CI runs the tests on Python 3.11–3.13 and fails if `reports/leaderboard.md` is
+out of date.
+
+## License
+
+MIT

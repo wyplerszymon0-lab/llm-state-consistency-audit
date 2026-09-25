@@ -1,0 +1,4 @@
+{
+  "display_name": "Baseline (partial drift)",
+  "note": "hand-written synthetic fixture, not a model. It applies holding-cost drift only after SELLs, to show the harness catches silent state bugs."
+}

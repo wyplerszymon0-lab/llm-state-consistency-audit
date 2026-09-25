@@ -1,1 +1,5 @@
-pandas>=2.0  # only needed for data/generate_data.py (CSV export utility)
+# The harness itself uses only the standard library.
+# Install the SDKs for the providers you want to call from generate.py:
+anthropic
+openai
+google-genai

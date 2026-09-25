@@ -1,22 +1,22 @@
-"""CLI entry point: score every model in models/ against the reference solver.
+"""Score every submission in submissions/ and write reports/leaderboard.md.
 
 Usage:
     python run_audit.py
 """
 
-from audit.scorer import render_report, score_all
+from bench.report import write_report
+from bench.scenarios import load_scenarios
+from bench.scoring import score_all
 
 
 def main():
-    scores = score_all()
-    name_width = max((len(s.name) for s in scores), default=10)
-    for s in scores:
-        print(
-            f"{s.name:<{name_width}}  result={s.result:>10.2f}  "
-            f"error={s.absolute_error:>8.2f}  score={s.quality_score:.4f}"
-        )
-    path = render_report(scores)
-    print(f"\nReport written to {path}")
+    summaries = score_all()
+    scenarios = list(load_scenarios())
+    width = max((len(s.display_name) for s in summaries), default=10)
+    for s in summaries:
+        cells = "  ".join(f"{name}={s.passes(name)}/{s.total(name)}" for name in scenarios)
+        print(f"{s.display_name:<{width}}  {cells}  pass_rate={s.pass_rate():.0%}")
+    print(f"\nReport written to {write_report(summaries)}")
 
 
 if __name__ == "__main__":
