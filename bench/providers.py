@@ -48,7 +48,11 @@ def generate_google(model: str, prompt: str) -> str:
 
 def generate_ollama(model: str, prompt: str) -> str:
     host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-    body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode()
+    # Ollama's default context (2–4k tokens) silently truncates a long prompt plus
+    # a full program in reply; 8k fits every scenario with room to spare.
+    body = json.dumps(
+        {"model": model, "prompt": prompt, "stream": False, "options": {"num_ctx": 8192}}
+    ).encode()
     request = urllib.request.Request(
         f"{host}/api/generate", data=body, headers={"Content-Type": "application/json"}
     )

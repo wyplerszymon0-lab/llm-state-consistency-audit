@@ -39,6 +39,23 @@ model several times: one sample says little about a non-deterministic model.
 Every rule is load-bearing: the test suite switches each rule off in turn and
 checks that the reference answer changes (`tests/test_scenarios.py`).
 
+## Results so far
+
+Full table: [`reports/leaderboard.md`](reports/leaderboard.md). Five runs per model and scenario, prompt v1, run locally through Ollama (default sampling, 8k context) on 2026-09-26/27:
+
+| Model | portfolio | warehouse | ledger | Pass rate |
+| :--- | :---: | :---: | :---: | ---: |
+| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% |
+| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% |
+
+What the 29 failed runs show:
+
+- **Most programs don't survive their own state.** 15 of 29 crashed, and the most common crashes are state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
+- **The dangerous failures are the quiet ones.** Two ledger runs finished cleanly and were off by only −14.73 and +17.03 on a 6,553.73 answer, which is the kind of mistake a reviewer would wave through. The harness exists to catch exactly those.
+- **The warehouse scenario broke both models**: 0/10, and 8 of the 10 runs crashed.
+
+These are 7–8B models on a consumer GPU, so low scores are expected; the table becomes informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`). Until a strong model passes the new warehouse and ledger prompts, part of a low score could also reflect how demanding those specs are.
+
 ## Usage
 
 ```bash

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from bench.prompting import PROMPT_VERSION
 from bench.scenarios import load_scenarios
-from bench.scoring import PASS, ModelSummary
+from bench.scoring import ERROR, PASS, ModelSummary
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "reports" / "leaderboard.md"
 
@@ -54,6 +54,10 @@ def render(summaries: list[ModelSummary]) -> str:
         for r in failures:
             value = f"{r.value:.2f}" if r.value is not None else "–"
             detail = (r.detail or "").replace("|", "\\|")
+            if r.status == ERROR:
+                # Exception type only: messages differ between Python versions
+                # ("Did you mean ...?" hints), which would make the report unstable.
+                detail = f"`{detail.split(':')[0]}`"
             if r.value is not None:
                 detail = f"off by {r.value - r.expected:+.2f}"
             lines.append(
