@@ -3,6 +3,7 @@
 from datetime import date
 from pathlib import Path
 
+from bench.diagnose import diagnose
 from bench.prompting import PROMPT_VERSION
 from bench.scenarios import load_scenarios
 from bench.scoring import ERROR, PASS, ModelSummary
@@ -48,6 +49,10 @@ def render(summaries: list[ModelSummary]) -> str:
             "",
             "## Failed runs",
             "",
+            "For every wrong answer the audit also runs the reference with each rule, and each pair "
+            "of rules, switched off. If the answer matches one of those exactly, the detail names the "
+            "rules the program most likely ignored.",
+            "",
             "| Model | Scenario | Run | Status | Answer | Expected | Detail |",
             "| :--- | :--- | :--- | :--- | ---: | ---: | :--- |",
         ]
@@ -60,6 +65,9 @@ def render(summaries: list[ModelSummary]) -> str:
                 detail = f"`{detail.split(':')[0]}`"
             if r.value is not None:
                 detail = f"off by {r.value - r.expected:+.2f}"
+                skipped = diagnose(scenarios[r.scenario], r.value)
+                if skipped:
+                    detail += " · equals the answer without: " + ", ".join(skipped)
             lines.append(
                 f"| {r.model} | {r.scenario} | {r.run_id} | {r.status} | {value} | "
                 f"{r.expected:.2f} | {detail} |"

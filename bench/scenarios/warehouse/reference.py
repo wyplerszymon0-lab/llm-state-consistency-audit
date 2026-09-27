@@ -41,6 +41,16 @@ EVENTS = [
 ]
 
 
+# Each rule, switched off. Used by the tests (every rule must change the answer)
+# and by the report, which checks whether a wrong answer equals one of these.
+RULES = {
+    "2-day reorder lead time": {"LEAD_TIME": 1},
+    "10% backorder discount": {"BACKORDER_DISCOUNT": 1.0},
+    "cancellation penalty": {"CANCELLATION_PENALTY": 0.0},
+    "expiry of perishable batches": {"SKUS": {sku: (999, *rest) for sku, (_, *rest) in SKUS.items()}},
+}
+
+
 def run() -> float:
     batches = {sku: [] for sku in SKUS}      # [qty, unit_cost, expiry_day, receipt_seq]
     backorders = {sku: [] for sku in SKUS}   # FIFO of [qty, unit_price]

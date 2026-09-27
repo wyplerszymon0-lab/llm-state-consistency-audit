@@ -41,6 +41,19 @@ EVENTS = [
 ]
 
 
+# Each rule, switched off. Used by the tests (every rule must change the answer)
+# and by the report, which checks whether a wrong answer equals one of these.
+RULES = {
+    "overdraft fee": {"OVERDRAFT_FEE": D(0)},
+    "rejection fee": {"REJECTION_FEE": D(0)},
+    "transfer fee": {"TRANSFER_FEE": D(0)},
+    "higher interest tier above 5000": {"RATE_HIGH": RATE_LOW},
+    "overdraft interest": {"RATE_OVERDRAFT": D(0)},
+    "all interest": {"RATE_LOW": D(0), "RATE_HIGH": D(0), "RATE_OVERDRAFT": D(0)},
+    "maintenance fee": {"MAINTENANCE_FEE": D(0)},
+}
+
+
 def _daily_interest(balance: Decimal) -> Decimal:
     if balance > 0:
         low = min(balance, TIER_LIMIT)

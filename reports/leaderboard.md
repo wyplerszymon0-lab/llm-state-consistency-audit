@@ -24,6 +24,8 @@ A run **passes** only if its answer is within the scenario tolerance (0.01) of t
 
 ## Failed runs
 
+For every wrong answer the audit also runs the reference with each rule, and each pair of rules, switched off. If the answer matches one of those exactly, the detail names the rules the program most likely ignored.
+
 | Model | Scenario | Run | Status | Answer | Expected | Detail |
 | :--- | :--- | :--- | :--- | ---: | ---: | :--- |
 | qwen2.5-coder-7b | ledger | run_1 | wrong | 4424.00 | 6553.73 | off by -2129.73 |

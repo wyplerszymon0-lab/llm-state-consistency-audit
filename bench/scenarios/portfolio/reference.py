@@ -30,6 +30,16 @@ LOW_PROFIT_TAX_RATE = 0.05
 DRIFT_RATE = 1.001
 
 
+# Each rule, switched off. Used by the tests (every rule must change the answer)
+# and by the report, which checks whether a wrong answer equals one of these.
+RULES = {
+    "1% buy premium after a profitable sale": {"PRICE_MODIFIER": 1.0},
+    "2% wealth tax": {"WEALTH_TAX_RATE": 0.0},
+    "15% high-profit tax bracket": {"HIGH_PROFIT_TAX_RATE": LOW_PROFIT_TAX_RATE},
+    "0.1% holding-cost drift": {"DRIFT_RATE": 1.0},
+}
+
+
 def _holdings_value(portfolios):
     return sum(qty * cost for lots in portfolios.values() for qty, cost in lots)
 
