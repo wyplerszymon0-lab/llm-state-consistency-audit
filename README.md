@@ -47,7 +47,7 @@ those rules (`bench/diagnose.py`).
 
 ## Results so far
 
-Full table: [`reports/leaderboard.md`](reports/leaderboard.md). Five runs per model and scenario, prompt v1, run locally through Ollama (default sampling, 8k context) on 2026-09-26/27:
+Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Five runs per model and scenario, prompt v1, run locally through Ollama (default sampling, 8k context) on 2026-09-26/27:
 
 | Model | portfolio | warehouse | ledger | Pass rate [95% CI] | pass@3 |
 | :--- | :---: | :---: | :---: | ---: | ---: |
@@ -109,6 +109,7 @@ bench/
   diagnose.py          matches wrong answers to rules switched off
   stats.py             pass@k and Wilson confidence intervals
   report.py            renders the leaderboard
+  site.py              turns it into the GitHub Pages site
 submissions/<scenario>/<model>/run_N.{reply.md,py}
 generate.py            CLI: query models
 run_audit.py           CLI: score and report
