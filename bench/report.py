@@ -27,14 +27,25 @@ def render(summaries: list[ModelSummary]) -> str:
         "A run **passes** only if its answer is within the scenario tolerance (0.01) of the "
         "reference. Anything else — a wrong number, a crash, a timeout or no code — fails.",
         "",
-        "| Rank | Model | " + " | ".join(scenarios) + " | Pass rate |",
-        "| ---: | :--- | " + " | ".join(":---:" for _ in scenarios) + " | ---: |",
+        "| Rank | Model | " + " | ".join(scenarios) + " | Pass rate [95% CI] | pass@3 |",
+        "| ---: | :--- | " + " | ".join(":---:" for _ in scenarios) + " | ---: | ---: |",
     ]
     for rank, s in enumerate(summaries, start=1):
         name = s.display_name + (" †" if s.note else "")
         cells = " | ".join(_cell(s, name_) for name_ in scenarios)
-        lines.append(f"| {rank} | {name} | {cells} | {s.pass_rate():.0%} |")
+        lo, hi = s.pass_rate_interval()
+        at3 = s.pass_at(3)
+        lines.append(
+            f"| {rank} | {name} | {cells} | {s.pass_rate():.0%} [{lo:.0%}–{hi:.0%}] | "
+            f"{'–' if at3 is None else f'{at3:.0%}'} |"
+        )
 
+    lines += [
+        "",
+        "*Pass rate* pools every run of the model; the 95% Wilson interval shows how much it could "
+        "move with more runs. *pass@3* is the unbiased estimate (Chen et al., 2021) of the chance "
+        "that at least one of 3 attempts passes, averaged over scenarios with at least 3 runs.",
+    ]
     notes = [s for s in summaries if s.note]
     if notes:
         lines.append("")
