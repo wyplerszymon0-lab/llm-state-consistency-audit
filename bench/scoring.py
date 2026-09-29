@@ -13,6 +13,7 @@ from pathlib import Path
 
 from bench.sandbox import execute
 from bench.scenarios import Scenario, load_scenarios
+from bench.stats import pass_at_k, wilson_interval
 
 SUBMISSIONS_DIR = Path(__file__).resolve().parent.parent / "submissions"
 
@@ -45,6 +46,19 @@ class ModelSummary:
 
     def pass_rate(self) -> float:
         return self.passes() / self.total() if self.total() else 0.0
+
+    def pass_rate_interval(self) -> tuple[float, float]:
+        """95% Wilson interval for the pooled pass rate over all runs."""
+        return wilson_interval(self.passes(), self.total())
+
+    def pass_at(self, k: int) -> float | None:
+        """pass@k averaged over scenarios with at least k runs; None if there are none."""
+        estimates = [
+            pass_at_k(len(runs), sum(r.status == PASS for r in runs), k)
+            for runs in self.runs.values()
+            if len(runs) >= k
+        ]
+        return sum(estimates) / len(estimates) if estimates else None
 
     def _select(self, scenario):
         if scenario is not None:

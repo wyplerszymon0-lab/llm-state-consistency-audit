@@ -1,15 +1,17 @@
 # LLM State-Consistency Audit — Leaderboard
 
-_Generated 2026-09-27 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
+_Generated 2026-09-29 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
 
 A run **passes** only if its answer is within the scenario tolerance (0.01) of the reference. Anything else — a wrong number, a crash, a timeout or no code — fails.
 
-| Rank | Model | ledger | portfolio | warehouse | Pass rate |
-| ---: | :--- | :---: | :---: | :---: | ---: |
-| 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | 100% |
-| 2 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 7% |
-| 3 | llama3.1:8b | 0/5 | 0/5 | 0/5 | 0% |
-| 4 | Baseline (partial drift) † | – | 0/1 | – | 0% |
+| Rank | Model | ledger | portfolio | warehouse | Pass rate [95% CI] | pass@3 |
+| ---: | :--- | :---: | :---: | :---: | ---: | ---: |
+| 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | 100% [21%–100%] | – |
+| 2 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 7% [1%–30%] | 20% |
+| 3 | llama3.1:8b | 0/5 | 0/5 | 0/5 | 0% [0%–20%] | 0% |
+| 4 | Baseline (partial drift) † | – | 0/1 | – | 0% [0%–79%] | – |
+
+*Pass rate* pools every run of the model; the 95% Wilson interval shows how much it could move with more runs. *pass@3* is the unbiased estimate (Chen et al., 2021) of the chance that at least one of 3 attempts passes, averaged over scenarios with at least 3 runs.
 
 † **Gemini 3.1 Pro Reasoning**: frozen output from before this harness existed; generated with an earlier, unpreserved prompt, not prompt v1.  
 † **Baseline (partial drift)**: hand-written synthetic fixture, not a model. It applies holding-cost drift only after SELLs, to show the harness catches silent state bugs.  

@@ -15,7 +15,8 @@ def main():
     width = max((len(s.display_name) for s in summaries), default=10)
     for s in summaries:
         cells = "  ".join(f"{name}={s.passes(name)}/{s.total(name)}" for name in scenarios)
-        print(f"{s.display_name:<{width}}  {cells}  pass_rate={s.pass_rate():.0%}")
+        lo, hi = s.pass_rate_interval()
+        print(f"{s.display_name:<{width}}  {cells}  pass_rate={s.pass_rate():.0%} [{lo:.0%}-{hi:.0%}]")
     print(f"\nReport written to {write_report(summaries)}")
 
 

@@ -27,6 +27,9 @@ reference.py ──────────────────────�
 A run **passes** only if it is within **0.01** of the reference. A wrong number,
 a crash, a timeout and a reply without code all count as failures. Run each
 model several times: one sample says little about a non-deterministic model.
+The leaderboard therefore reports a 95% Wilson interval for each pass rate and
+pass@3, the unbiased estimate (Chen et al., 2021) that at least one of three
+attempts passes (`bench/stats.py`).
 
 ## Scenarios
 
@@ -46,10 +49,10 @@ those rules (`bench/diagnose.py`).
 
 Full table: [`reports/leaderboard.md`](reports/leaderboard.md). Five runs per model and scenario, prompt v1, run locally through Ollama (default sampling, 8k context) on 2026-09-26/27:
 
-| Model | portfolio | warehouse | ledger | Pass rate |
-| :--- | :---: | :---: | :---: | ---: |
-| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% |
-| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% |
+| Model | portfolio | warehouse | ledger | Pass rate [95% CI] | pass@3 |
+| :--- | :---: | :---: | :---: | ---: | ---: |
+| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% [1–30%] | 20% |
+| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% [0–20%] | 0% |
 
 What the 29 failed runs show:
 
@@ -104,6 +107,7 @@ bench/
   sandbox.py           runs a submission in a subprocess with a timeout
   scoring.py           classifies every run: pass / wrong / error / timeout / no_code
   diagnose.py          matches wrong answers to rules switched off
+  stats.py             pass@k and Wilson confidence intervals
   report.py            renders the leaderboard
 submissions/<scenario>/<model>/run_N.{reply.md,py}
 generate.py            CLI: query models
