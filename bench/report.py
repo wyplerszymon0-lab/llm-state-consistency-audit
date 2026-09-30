@@ -2,6 +2,7 @@
 
 from datetime import date
 from pathlib import Path
+from statistics import median
 
 from bench.diagnose import diagnose
 from bench.prompting import PROMPT_VERSION
@@ -14,6 +15,42 @@ REPORT_PATH = Path(__file__).resolve().parent.parent / "reports" / "leaderboard.
 def _cell(summary: ModelSummary, scenario: str) -> str:
     total = summary.total(scenario)
     return f"{summary.passes(scenario)}/{total}" if total else "–"
+
+
+def _usage_section(summaries: list[ModelSummary]) -> list[str]:
+    """Latency, tokens and cost for models whose runs recorded them."""
+    rows = []
+    for s in summaries:
+        runs = [r for rs in s.runs.values() for r in rs if r.usage]
+        if not runs:
+            continue
+        latency = median([r.usage["latency_s"] for r in runs])
+        tokens = [r.usage["output_tokens"] for r in runs if r.usage.get("output_tokens") is not None]
+        costs = [r.usage.get("cost_usd") for r in runs]
+        if any(c is None for c in costs):
+            total, per_pass = "–", "–"
+        else:
+            spent = sum(costs)
+            passes = sum(r.status == PASS for r in runs)
+            total = f"${spent:.2f}"
+            per_pass = f"${spent / passes:.2f}" if passes else "no passes"
+        rows.append(
+            f"| {s.display_name} | {len(runs)} | {latency:.0f} s | "
+            f"{f'{median(tokens):,.0f}' if tokens else '–'} | {total} | {per_pass} |"
+        )
+    if not rows:
+        return []
+    return [
+        "",
+        "## Cost and speed",
+        "",
+        "Recorded by `generate.py` for each run (runs made before it recorded usage are left out). "
+        "Local models cost nothing to call; latency depends on the hardware they ran on.",
+        "",
+        "| Model | Runs | Median latency | Median output tokens | Total cost | Cost per passed run |",
+        "| :--- | ---: | ---: | ---: | ---: | ---: |",
+        *rows,
+    ]
 
 
 def render(summaries: list[ModelSummary]) -> str:
@@ -50,6 +87,8 @@ def render(summaries: list[ModelSummary]) -> str:
     if notes:
         lines.append("")
         lines.extend(f"† **{s.display_name}**: {s.note}  " for s in notes)
+
+    lines += _usage_section(summaries)
 
     lines += ["", "## Reference answers", "", "| Scenario | Answer |", "| :--- | ---: |"]
     lines += [f"| {sc.title} (`{sc.name}`) | {sc.expected():.2f} |" for sc in scenarios.values()]

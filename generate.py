@@ -11,9 +11,11 @@ import argparse
 import json
 import re
 import sys
+import time
 from datetime import datetime, timezone
 
 from bench.extract import extract_code
+from bench.pricing import cost_usd
 from bench.prompting import PROMPT_VERSION, build_prompt
 from bench.providers import generate
 from bench.scenarios import load_scenarios
@@ -50,6 +52,7 @@ def main(argv=None):
             start = max((int(r.split("_")[1]) for r in existing), default=0) + 1
             for n in range(start, start + args.runs):
                 label = f"{spec} / {name} / run_{n}"
+                started = time.perf_counter()
                 try:
                     reply = generate(spec, build_prompt(scenarios[name]))
                 except Exception as exc:  # keep going: one bad call shouldn't sink the batch
@@ -61,8 +64,18 @@ def main(argv=None):
                     f"<!-- model: {spec} | prompt v{PROMPT_VERSION} | "
                     f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} -->\n\n"
                 )
-                (model_dir / f"run_{n}.reply.md").write_text(header + reply, encoding="utf-8")
-                code = extract_code(reply)
+                latency = time.perf_counter() - started
+                (model_dir / f"run_{n}.reply.md").write_text(header + reply.text, encoding="utf-8")
+                usage = {
+                    "model": spec,
+                    "prompt_version": PROMPT_VERSION,
+                    "latency_s": round(latency, 2),
+                    "input_tokens": reply.input_tokens,
+                    "output_tokens": reply.output_tokens,
+                    "cost_usd": cost_usd(spec, reply.input_tokens, reply.output_tokens),
+                }
+                (model_dir / f"run_{n}.meta.json").write_text(json.dumps(usage, indent=2) + "\n", encoding="utf-8")
+                code = extract_code(reply.text)
                 if code:
                     (model_dir / f"run_{n}.py").write_text(code, encoding="utf-8")
                 print(f"saved   {label}" + ("" if code else "  (no code block found)"))

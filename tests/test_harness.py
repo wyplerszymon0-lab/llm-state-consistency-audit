@@ -3,6 +3,7 @@ import json
 import pytest
 
 import generate
+from bench.providers import Reply
 from bench.extract import extract_code
 from bench.report import render
 from bench.sandbox import execute
@@ -95,14 +96,21 @@ def test_score_all_classifies_every_run(submissions, monkeypatch):
 
 def test_generate_saves_reply_and_code(tmp_path, monkeypatch):
     monkeypatch.setattr(generate, "SUBMISSIONS_DIR", tmp_path)
-    monkeypatch.setattr(generate, "generate", lambda spec, prompt: "```python\ndef run():\n    return 1.0\n```")
+    monkeypatch.setattr(
+        generate, "generate", lambda spec, prompt: Reply("```python\ndef run():\n    return 1.0\n```", 1000, 2000)
+    )
 
     assert generate.main(["anthropic:claude-opus-5", "--scenario", "ledger", "--runs", "2"]) == 0
 
     model_dir = tmp_path / "ledger" / "claude-opus-5"
     assert sorted(p.name for p in model_dir.iterdir()) == [
-        "meta.json", "run_1.py", "run_1.reply.md", "run_2.py", "run_2.reply.md",
+        "meta.json", "run_1.meta.json", "run_1.py", "run_1.reply.md",
+        "run_2.meta.json", "run_2.py", "run_2.reply.md",
     ]
+    usage = json.loads((model_dir / "run_1.meta.json").read_text(encoding="utf-8"))
+    assert (usage["input_tokens"], usage["output_tokens"]) == (1000, 2000)
+    assert usage["cost_usd"] == pytest.approx((1000 * 5 + 2000 * 25) / 1e6)  # Opus 5 list price
+    assert usage["latency_s"] >= 0
     assert "prompt v1" in (model_dir / "run_1.reply.md").read_text(encoding="utf-8")
 
 
@@ -115,7 +123,7 @@ def test_generate_continues_numbering_and_survives_errors(tmp_path, monkeypatch)
 
     monkeypatch.setattr(generate, "generate", flaky)
     assert generate.main(["ollama:m", "--scenario", "ledger"]) == 1
-    monkeypatch.setattr(generate, "generate", lambda spec, prompt: "no code")
+    monkeypatch.setattr(generate, "generate", lambda spec, prompt: Reply("no code"))
     assert generate.main(["ollama:m", "--scenario", "ledger"]) == 0
     assert (tmp_path / "ledger" / "m" / "run_2.reply.md").exists()
     assert not (tmp_path / "ledger" / "m" / "run_2.py").exists()

@@ -19,7 +19,8 @@ class FakeOllama:
             def do_POST(self):
                 body = self.rfile.read(int(self.headers["Content-Length"]))
                 fake.requests.append({"path": self.path, "body": json.loads(body)})
-                payload = json.dumps({"response": reply} if status == 200 else {"error": "boom"}).encode()
+                ok = {"response": reply, "prompt_eval_count": 812, "eval_count": 345}
+                payload = json.dumps(ok if status == 200 else {"error": "boom"}).encode()
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(payload)))
@@ -57,14 +58,15 @@ def test_ollama_request_shape(ollama):
     server = ollama()
     reply = providers.generate("ollama:qwen2.5-coder:7b", "PROMPT")
 
-    assert reply.startswith("```python")
+    assert reply.text.startswith("```python")
+    assert (reply.input_tokens, reply.output_tokens) == (812, 345)
     [request] = server.requests
     assert request["path"] == "/api/generate"
     assert request["body"]["model"] == "qwen2.5-coder:7b"  # everything after the first colon
     assert request["body"]["prompt"] == "PROMPT"
     assert request["body"]["stream"] is False
-    # The default 2–4k context silently truncates long prompts.
-    assert request["body"]["options"]["num_ctx"] == 8192
+    # The default 2–4k context silently truncates long prompts and reasoning.
+    assert request["body"]["options"]["num_ctx"] == 16384
 
 
 def test_ollama_http_error_propagates(ollama):
