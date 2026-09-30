@@ -29,6 +29,7 @@ class RunResult:
     value: float | None
     expected: float
     detail: str | None = None
+    usage: dict | None = None  # latency, tokens and cost from generate.py, if recorded
 
 
 @dataclass
@@ -72,7 +73,9 @@ def classify(value: float, scenario: Scenario, expected: float) -> str:
 
 def score_run(scenario: Scenario, expected: float, model_dir: Path, run_id: str) -> RunResult:
     code = model_dir / f"{run_id}.py"
-    base = dict(scenario=scenario.name, model=model_dir.name, run_id=run_id, expected=expected)
+    usage_path = model_dir / f"{run_id}.meta.json"
+    usage = json.loads(usage_path.read_text(encoding="utf-8")) if usage_path.is_file() else None
+    base = dict(scenario=scenario.name, model=model_dir.name, run_id=run_id, expected=expected, usage=usage)
     if not code.is_file():
         return RunResult(status=NO_CODE, value=None, detail="no code block in reply", **base)
 

@@ -19,7 +19,9 @@ reference.py ──────────────────────�
 ```
 
 1. `generate.py` sends each scenario's prompt to the models you choose and saves
-   the raw reply plus the extracted Python module under `submissions/`.
+   the raw reply plus the extracted Python module under `submissions/`, and records
+   each run's latency, token usage and cost (`run_N.meta.json`; list prices in
+   `bench/pricing.py`, local models free, unknown prices left blank).
 2. `run_audit.py` executes every submission in a separate process (with a timeout),
    compares `run()` with the reference answer and writes
    [`reports/leaderboard.md`](reports/leaderboard.md).
@@ -102,7 +104,8 @@ Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
 bench/
   scenarios/<name>/    prompt.md + reference.py for each scenario
   prompting.py         shared instructions wrapped around every prompt (versioned)
-  providers.py         Anthropic / OpenAI / Google / Ollama clients
+  providers.py         Anthropic / OpenAI / Google / Ollama clients (reply + token usage)
+  pricing.py           list prices for the cost column
   extract.py           pulls the code block out of a reply
   sandbox.py           runs a submission in a subprocess with a timeout
   scoring.py           classifies every run: pass / wrong / error / timeout / no_code
