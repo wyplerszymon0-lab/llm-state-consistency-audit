@@ -1,20 +1,32 @@
 # LLM State-Consistency Audit — Leaderboard
 
-_Generated 2026-09-29 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
+_Generated 2026-10-01 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
 
 A run **passes** only if its answer is within the scenario tolerance (0.01) of the reference. Anything else — a wrong number, a crash, a timeout or no code — fails.
 
 | Rank | Model | ledger | portfolio | warehouse | Pass rate [95% CI] | pass@3 |
 | ---: | :--- | :---: | :---: | :---: | ---: | ---: |
 | 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | 100% [21%–100%] | – |
-| 2 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 7% [1%–30%] | 20% |
-| 3 | llama3.1:8b | 0/5 | 0/5 | 0/5 | 0% [0%–20%] | 0% |
-| 4 | Baseline (partial drift) † | – | 0/1 | – | 0% [0%–79%] | – |
+| 2 | qwen3:8b † | 1/1 | – | – | 100% [21%–100%] | – |
+| 3 | qwen2.5-coder:14b | 0/5 | 3/5 | 0/5 | 20% [7%–45%] | 33% |
+| 4 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 7% [1%–30%] | 20% |
+| 5 | llama3.1:8b | 0/5 | 0/5 | 0/5 | 0% [0%–20%] | 0% |
+| 6 | Baseline (partial drift) † | – | 0/1 | – | 0% [0%–79%] | – |
 
 *Pass rate* pools every run of the model; the 95% Wilson interval shows how much it could move with more runs. *pass@3* is the unbiased estimate (Chen et al., 2021) of the chance that at least one of 3 attempts passes, averaged over scenarios with at least 3 runs.
 
 † **Gemini 3.1 Pro Reasoning**: frozen output from before this harness existed; generated with an earlier, unpreserved prompt, not prompt v1.  
+† **qwen3:8b**: reasoning model, 1 run only: on an 8 GB laptop GPU each run took ~27 minutes and ~16k output tokens (mostly thinking), so 5 runs per scenario was not practical.  
 † **Baseline (partial drift)**: hand-written synthetic fixture, not a model. It applies holding-cost drift only after SELLs, to show the harness catches silent state bugs.  
+
+## Cost and speed
+
+Recorded by `generate.py` for each run (runs made before it recorded usage are left out). Local models cost nothing to call; latency depends on the hardware they ran on.
+
+| Model | Runs | Median latency | Median output tokens | Total cost | Cost per passed run |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| qwen3:8b | 1 | 1634 s | 15,883 | $0.00 | $0.00 |
+| qwen2.5-coder:14b | 15 | 236 s | 1,271 | $0.00 | $0.00 |
 
 ## Reference answers
 
@@ -30,6 +42,18 @@ For every wrong answer the audit also runs the reference with each rule, and eac
 
 | Model | Scenario | Run | Status | Answer | Expected | Detail |
 | :--- | :--- | :--- | :--- | ---: | ---: | :--- |
+| qwen2.5-coder-14b | ledger | run_1 | wrong | 7260.38 | 6553.73 | off by +706.65 |
+| qwen2.5-coder-14b | ledger | run_2 | wrong | 6560.52 | 6553.73 | off by +6.79 |
+| qwen2.5-coder-14b | ledger | run_3 | wrong | 18605.26 | 6553.73 | off by +12051.53 |
+| qwen2.5-coder-14b | ledger | run_4 | wrong | -15.00 | 6553.73 | off by -6568.73 |
+| qwen2.5-coder-14b | ledger | run_5 | error | – | 6553.73 | `UnboundLocalError` |
+| qwen2.5-coder-14b | portfolio | run_3 | error | – | 17072.00 | `ValueError` |
+| qwen2.5-coder-14b | portfolio | run_4 | wrong | 17090.31 | 17072.00 | off by +18.31 · equals the answer without: 2% wealth tax |
+| qwen2.5-coder-14b | warehouse | run_1 | wrong | 166.70 | 622.67 | off by -455.97 |
+| qwen2.5-coder-14b | warehouse | run_2 | wrong | 133.63 | 622.67 | off by -489.04 |
+| qwen2.5-coder-14b | warehouse | run_3 | error | – | 622.67 | `NameError` |
+| qwen2.5-coder-14b | warehouse | run_4 | error | – | 622.67 | `NameError` |
+| qwen2.5-coder-14b | warehouse | run_5 | error | – | 622.67 | `ValueError` |
 | qwen2.5-coder-7b | ledger | run_1 | wrong | 4424.00 | 6553.73 | off by -2129.73 |
 | qwen2.5-coder-7b | ledger | run_2 | wrong | 6539.00 | 6553.73 | off by -14.73 |
 | qwen2.5-coder-7b | ledger | run_3 | wrong | 865.00 | 6553.73 | off by -5688.73 |

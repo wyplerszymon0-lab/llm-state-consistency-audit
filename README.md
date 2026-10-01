@@ -49,21 +49,24 @@ those rules (`bench/diagnose.py`).
 
 ## Results so far
 
-Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Five runs per model and scenario, prompt v1, run locally through Ollama (default sampling, 8k context) on 2026-09-26/27:
+Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Prompt v1, run locally through Ollama on a laptop with an 8 GB GPU, 2026-09-26 to 10-01:
 
 | Model | portfolio | warehouse | ledger | Pass rate [95% CI] | pass@3 |
 | :--- | :---: | :---: | :---: | ---: | ---: |
+| Qwen2.5-Coder 14B | 3/5 | 0/5 | 0/5 | 20% [7–45%] | 33% |
 | Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% [1–30%] | 20% |
 | Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% [0–20%] | 0% |
+| Qwen3 8B (reasoning), 1 run | – | – | 1/1 | 100% [21–100%] | – |
 
-What the 29 failed runs show:
+What the runs show:
 
-- **Most programs don't survive their own state.** 15 of 29 crashed, and the most common crashes are state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
-- **The dangerous failures are the quiet ones.** Two ledger runs finished cleanly and were off by only −14.73 and +17.03 on a 6,553.73 answer, which is the kind of mistake a reviewer would wave through. The harness exists to catch exactly those.
-- **The warehouse scenario broke both models**: 0/10, and 8 of the 10 runs crashed.
-- **Wrong answers are misimplementations, not omissions.** For each wrong answer the audit replays the reference with every rule and every pair of rules switched off. None of the 14 matched, so no model simply skipped a rule; they implemented rules incorrectly (a partially applied drift, like the hand-written baseline, doesn't match either).
+- **Size helps, but only so far.** Doubling the coder model from 7B to 14B took portfolio from 1/5 to 3/5, yet warehouse and ledger stayed at 0/5 for every non-reasoning model.
+- **A reasoning model solved the ledger on its only try**, the first pass in 16 local ledger attempts. It cost ~16k output tokens (mostly thinking) and 27 minutes on this GPU versus ~1.3k tokens and ~4 minutes for the 14B coder; one run is a signal, not a result, and running 5 per scenario wasn't practical here.
+- **Most programs don't survive their own state.** Across the 7B, 8B and 14B models, a large share of failures are crashes from state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
+- **The dangerous failures are the quiet ones.** Several runs finished cleanly and were off by a few units on answers in the thousands (−14.73 and +17.03 on 6,553.73; +6.79; +18.31 on 17,072.00) — mistakes a reviewer would wave through.
+- **The diagnosis named a skipped rule once.** One 14B portfolio answer (+18.31) equals the reference with the 2% wealth tax switched off exactly, so that program most likely ignored the rule. Every other wrong answer matches no single or paired omission: those rules were implemented, but wrongly.
 
-These are 7–8B models on a consumer GPU, so low scores are expected; the table becomes informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`). Until a strong model passes the new warehouse and ledger prompts, part of a low score could also reflect how demanding those specs are.
+Cost and speed per model are in the leaderboard (every local run costs $0; latency is this laptop's). The table becomes truly informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`).
 
 ## Usage
 

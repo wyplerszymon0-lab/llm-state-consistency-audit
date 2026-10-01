@@ -1,0 +1,5 @@
+{
+  "display_name": "qwen3:8b",
+  "model": "ollama:qwen3:8b",
+  "note": "reasoning model, 1 run only: on an 8 GB laptop GPU each run took ~27 minutes and ~16k output tokens (mostly thinking), so 5 runs per scenario was not practical."
+}
