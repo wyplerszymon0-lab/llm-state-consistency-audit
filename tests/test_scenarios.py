@@ -4,7 +4,7 @@ from bench.diagnose import _run_with, diagnose, mutant_answers
 from bench.prompting import build_prompt
 from bench.scenarios import load_scenarios
 
-EXPECTED = {"portfolio": 17072.00, "warehouse": 622.67, "ledger": 6553.73}
+EXPECTED = {"portfolio": 17072.00, "warehouse": 622.67, "ledger": 6553.73, "wallet": 2351.14}
 
 
 def test_all_scenarios_registered():
