@@ -86,7 +86,8 @@ def test_score_all_classifies_every_run(submissions, monkeypatch):
     assert mixed.display_name == "Mixed"
 
     report = render([good, mixed])
-    assert "| 1 | good | – | 2/2 | – | 100% [34%–100%] | – |" in report
+    # columns: ledger, portfolio, wallet, warehouse
+    assert "| 1 | good | – | 2/2 | – | – | 100% [34%–100%] | – |" in report
     assert "Mixed †" in report
     assert "off by +0.50" in report
     assert PASS not in [r.status for r in mixed.runs["portfolio"]]

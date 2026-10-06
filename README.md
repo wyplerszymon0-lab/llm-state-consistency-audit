@@ -3,7 +3,7 @@
 A benchmark for one specific failure mode of LLM-written code: **losing track of
 global state across a sequence of dependent operations.**
 
-Each scenario is a small simulation (a portfolio, a warehouse, a bank ledger)
+Each scenario is a small simulation (a portfolio, a warehouse, a bank ledger, a multi-currency wallet)
 where several rules interact through shared state: a flag set by one event changes
 the next, costs compound after every step, fees depend on balances that other
 events just changed. Get one dependency stale or mistimed and the program still
@@ -40,12 +40,15 @@ attempts passes (`bench/stats.py`).
 | [`portfolio`](bench/scenarios/portfolio/prompt.md) | FIFO lots across 3 portfolios, global "last sale was profitable" flag, wealth tax computed mid-transaction, cost drift after every transaction | 17072.00 |
 | [`warehouse`](bench/scenarios/warehouse/prompt.md) | Perishable batches (expiry, FEFO picking), backorders filled at a discount by later deliveries, automatic reorders with lead time | 622.67 |
 | [`ledger`](bench/scenarios/ledger/prompt.md) | Overdraft limit and fees, rejected debits, tiered daily interest accrued at full precision, period close with a minimum-balance fee waiver | 6553.73 |
+| [`wallet`](bench/scenarios/wallet/prompt.md) | Conversions at the rate in force at the time, two rounding modes (half-even for conversions, half-up for valuations), a spread that depends on yesterday's converted wallet value, card payments that auto-convert a shortfall or are declined with a fee, a monthly fee on the converted total | 2351.14 |
 
 Every rule is load-bearing: each reference module lists its rules in `RULES`,
 and the test suite switches each one off in turn and checks that the answer
 changes (`tests/test_scenarios.py`). The same list powers the diagnosis in the
 leaderboard: a wrong answer that equals the reference with some rules off names
 those rules (`bench/diagnose.py`).
+
+The `wallet` prompt was also checked the other way round: a second implementation written from `prompt.md` alone, without the reference, gives the same 2351.14. Its two rounding rules move the answer by only a cent each, so the events include two exact half-cent ties (e.g. 755.00 USD × 4.0110 = 3028.305 PLN); together they shift the answer by 0.02, more than the 0.01 tolerance, which makes "half-even rounding" a rule a program can be caught ignoring. Rounding at the PLN step of a cross-currency conversion is specified but not counted as a rule: skipping it changes the answer by less than a cent.
 
 ## Results so far
 
@@ -57,6 +60,8 @@ Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-c
 | Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% [1–30%] | 20% |
 | Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% [0–20%] | 0% |
 | Qwen3 8B (reasoning), 1 run | – | – | 1/1 | 100% [21–100%] | – |
+
+The `wallet` scenario was added after these runs and has no submissions yet.
 
 What the runs show:
 

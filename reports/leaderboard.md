@@ -1,17 +1,17 @@
 # LLM State-Consistency Audit — Leaderboard
 
-_Generated 2026-10-01 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
+_Generated 2026-10-06 by `run_audit.py` (prompt v1). Do not hand-edit — rerun the audit instead._
 
 A run **passes** only if its answer is within the scenario tolerance (0.01) of the reference. Anything else — a wrong number, a crash, a timeout or no code — fails.
 
-| Rank | Model | ledger | portfolio | warehouse | Pass rate [95% CI] | pass@3 |
-| ---: | :--- | :---: | :---: | :---: | ---: | ---: |
-| 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | 100% [21%–100%] | – |
-| 2 | qwen3:8b † | 1/1 | – | – | 100% [21%–100%] | – |
-| 3 | qwen2.5-coder:14b | 0/5 | 3/5 | 0/5 | 20% [7%–45%] | 33% |
-| 4 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 7% [1%–30%] | 20% |
-| 5 | llama3.1:8b | 0/5 | 0/5 | 0/5 | 0% [0%–20%] | 0% |
-| 6 | Baseline (partial drift) † | – | 0/1 | – | 0% [0%–79%] | – |
+| Rank | Model | ledger | portfolio | wallet | warehouse | Pass rate [95% CI] | pass@3 |
+| ---: | :--- | :---: | :---: | :---: | :---: | ---: | ---: |
+| 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | – | 100% [21%–100%] | – |
+| 2 | qwen3:8b † | 1/1 | – | – | – | 100% [21%–100%] | – |
+| 3 | qwen2.5-coder:14b | 0/5 | 3/5 | – | 0/5 | 20% [7%–45%] | 33% |
+| 4 | qwen2.5-coder:7b | 0/5 | 1/5 | – | 0/5 | 7% [1%–30%] | 20% |
+| 5 | llama3.1:8b | 0/5 | 0/5 | – | 0/5 | 0% [0%–20%] | 0% |
+| 6 | Baseline (partial drift) † | – | 0/1 | – | – | 0% [0%–79%] | – |
 
 *Pass rate* pools every run of the model; the 95% Wilson interval shows how much it could move with more runs. *pass@3* is the unbiased estimate (Chen et al., 2021) of the chance that at least one of 3 attempts passes, averaged over scenarios with at least 3 runs.
 
@@ -34,6 +34,7 @@ Recorded by `generate.py` for each run (runs made before it recorded usage are l
 | :--- | ---: |
 | Bank ledger (`ledger`) | 6553.73 |
 | Portfolio ledger (`portfolio`) | 17072.00 |
+| Multi-currency wallet (`wallet`) | 2351.14 |
 | Perishable warehouse (`warehouse`) | 622.67 |
 
 ## Failed runs
