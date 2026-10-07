@@ -71,7 +71,7 @@ def classify(value: float, scenario: Scenario, expected: float) -> str:
     return PASS if abs(value - expected) <= scenario.tolerance + 1e-9 else WRONG
 
 
-def score_run(scenario: Scenario, expected: float, model_dir: Path, run_id: str) -> RunResult:
+def score_run(scenario: Scenario, expected: float, model_dir: Path, run_id: str, executor=None) -> RunResult:
     code = model_dir / f"{run_id}.py"
     usage_path = model_dir / f"{run_id}.meta.json"
     usage = json.loads(usage_path.read_text(encoding="utf-8")) if usage_path.is_file() else None
@@ -79,7 +79,8 @@ def score_run(scenario: Scenario, expected: float, model_dir: Path, run_id: str)
     if not code.is_file():
         return RunResult(status=NO_CODE, value=None, detail="no code block in reply", **base)
 
-    execution = execute(code)
+    # Looked up at call time, so tests can monkeypatch `execute`.
+    execution = (executor or execute)(code)
     if execution.status != "ok":
         return RunResult(status=execution.status, value=None, detail=execution.error, **base)
     return RunResult(
@@ -93,7 +94,8 @@ def run_ids(model_dir: Path) -> list[str]:
     return sorted(ids, key=lambda s: int(s.split("_")[1]))
 
 
-def score_all(submissions_dir: Path = SUBMISSIONS_DIR) -> list[ModelSummary]:
+def score_all(submissions_dir: Path = SUBMISSIONS_DIR, executor=None) -> list[ModelSummary]:
+    """Score every run. executor(path) -> Execution; default: bench.sandbox.execute."""
     summaries: dict[str, ModelSummary] = {}
     for scenario in load_scenarios().values():
         scenario_dir = submissions_dir / scenario.name
@@ -108,6 +110,6 @@ def score_all(submissions_dir: Path = SUBMISSIONS_DIR) -> list[ModelSummary]:
                 ModelSummary(model_dir.name, meta.get("display_name", model_dir.name), meta.get("note")),
             )
             for run_id in run_ids(model_dir):
-                summary.runs[scenario.name].append(score_run(scenario, expected, model_dir, run_id))
+                summary.runs[scenario.name].append(score_run(scenario, expected, model_dir, run_id, executor))
 
     return sorted(summaries.values(), key=lambda s: (-s.pass_rate(), -s.total(), s.display_name))
