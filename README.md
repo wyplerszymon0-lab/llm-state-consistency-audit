@@ -86,14 +86,22 @@ python generate.py anthropic:claude-opus-5 openai:<model-id> google:<model-id> -
 python generate.py ollama:qwen3-coder --scenario ledger --runs 5
 
 python run_audit.py                   # score everything, rewrite the leaderboard
+python run_audit.py --sandbox docker  # the same, each submission in a locked-down container
 ```
 
 Providers: `anthropic`, `openai`, `google`, `ollama`. New runs never overwrite old
 ones; they get the next free number.
 
-> **Security:** submissions are model-generated code and run with your user's
-> permissions. The subprocess isolates crashes and infinite loops, not malicious
-> code. Run untrusted submissions in a container or VM.
+> **Security:** submissions are model-generated code. By default they run in a
+> subprocess with your user's permissions, which isolates crashes and infinite
+> loops, not malicious code. For code you have not read, use `--sandbox docker`:
+> each submission runs in a throwaway `python:3.12-slim` container with no network,
+> a read-only file system (only a 16 MB `/tmp` is writable), 256 MB of memory and no
+> swap, one CPU, at most 64 processes, no Linux capabilities, as user `nobody`, with
+> only the submission itself mounted (read-only). The tests run real containers and
+> check each of these: no network, no writes, the memory limit, the timeout, the user.
+> Scoring all 48 recorded runs this way gives the same leaderboard as the
+> subprocess mode, in about 40 s (container start-up costs ~1 s per run).
 
 ## Adding a scenario
 
@@ -115,7 +123,7 @@ bench/
   providers.py         Anthropic / OpenAI / Google / Ollama clients (reply + token usage)
   pricing.py           list prices for the cost column
   extract.py           pulls the code block out of a reply
-  sandbox.py           runs a submission in a subprocess with a timeout
+  sandbox.py           runs a submission in a subprocess or a locked-down Docker container
   scoring.py           classifies every run: pass / wrong / error / timeout / no_code
   diagnose.py          matches wrong answers to rules switched off
   stats.py             pass@k and Wilson confidence intervals
