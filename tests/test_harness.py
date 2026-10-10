@@ -130,5 +130,25 @@ def test_generate_continues_numbering_and_survives_errors(tmp_path, monkeypatch)
     assert not (tmp_path / "ledger" / "m" / "run_2.py").exists()
 
 
+def test_generate_with_prompt_v2_saves_runs_separately(tmp_path, monkeypatch):
+    monkeypatch.setattr(generate, "SUBMISSIONS_DIR", tmp_path)
+    prompts = []
+
+    def fake(spec, prompt):
+        prompts.append(prompt)
+        return Reply("```python\ndef run():\n    return 1.0\n```")
+
+    monkeypatch.setattr(generate, "generate", fake)
+    assert generate.main(["ollama:m", "--scenario", "ledger", "--prompt-version", "2"]) == 0
+
+    model_dir = tmp_path / "ledger" / "m-prompt-v2"
+    meta = json.loads((model_dir / "meta.json").read_text(encoding="utf-8"))
+    assert meta == {"display_name": "m (prompt v2)", "model": "ollama:m", "prompt_version": 2}
+    assert json.loads((model_dir / "run_1.meta.json").read_text(encoding="utf-8"))["prompt_version"] == 2
+    assert "prompt v2" in (model_dir / "run_1.reply.md").read_text(encoding="utf-8")
+    assert "## Worked example" in prompts[0]
+    assert not (tmp_path / "ledger" / "m").exists()
+
+
 def test_slug():
     assert generate.slug("openai:GPT 5/Pro") == "gpt-5-pro"
