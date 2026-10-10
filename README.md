@@ -85,6 +85,9 @@ python generate.py anthropic:claude-opus-5 openai:<model-id> google:<model-id> -
 # local models through Ollama
 python generate.py ollama:qwen3-coder --scenario ledger --runs 5
 
+# prompt v2 (adds one worked step); saved as <model>-prompt-v2
+python generate.py ollama:qwen2.5-coder:14b --prompt-version 2 --runs 5
+
 python run_audit.py                   # score everything, rewrite the leaderboard
 python run_audit.py --sandbox docker  # the same, each submission in a locked-down container
 ```
@@ -111,6 +114,8 @@ Create `bench/scenarios/<name>/` with:
   It must be unambiguous: every ordering and rounding decision spelled out.
 - `reference.py` — a `run() -> float` that implements the spec exactly, with the
   tunable rules as module-level constants (so the tests can switch them off).
+- `worked_example.md` — one step computed by hand, used by prompt v2. Check its
+  numbers with a truncated reference run in `tests/test_scenarios.py`.
 
 Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
 
@@ -118,8 +123,8 @@ Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
 
 ```
 bench/
-  scenarios/<name>/    prompt.md + reference.py for each scenario
-  prompting.py         shared instructions wrapped around every prompt (versioned)
+  scenarios/<name>/    prompt.md, reference.py and worked_example.md for each scenario
+  prompting.py         shared instructions wrapped around every prompt (v1, v2)
   providers.py         Anthropic / OpenAI / Google / Ollama clients (reply + token usage)
   pricing.py           list prices for the cost column
   extract.py           pulls the code block out of a reply
