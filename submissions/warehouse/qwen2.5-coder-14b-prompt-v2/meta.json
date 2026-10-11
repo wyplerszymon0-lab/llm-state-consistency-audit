@@ -1,0 +1,5 @@
+{
+  "display_name": "qwen2.5-coder:14b (prompt v2)",
+  "model": "ollama:qwen2.5-coder:14b",
+  "prompt_version": 2
+}
