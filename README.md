@@ -52,22 +52,41 @@ The `wallet` prompt was also checked the other way round: a second implementatio
 
 ## Results so far
 
-Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Prompt v1, run locally through Ollama on a laptop with an 8 GB GPU, 2026-09-26 to 10-01:
+Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Prompt v1, run locally through Ollama on a laptop with an 8 GB GPU, 2026-09-26 to 10-10:
 
-| Model | portfolio | warehouse | ledger | Pass rate [95% CI] | pass@3 |
-| :--- | :---: | :---: | :---: | ---: | ---: |
-| Qwen2.5-Coder 14B | 3/5 | 0/5 | 0/5 | 20% [7–45%] | 33% |
-| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 7% [1–30%] | 20% |
-| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | 0% [0–20%] | 0% |
-| Qwen3 8B (reasoning), 1 run | – | – | 1/1 | 100% [21–100%] | – |
+| Model | portfolio | warehouse | ledger | wallet | Pass rate [95% CI] | pass@3 |
+| :--- | :---: | :---: | :---: | :---: | ---: | ---: |
+| Qwen2.5-Coder 14B | 3/5 | 0/5 | 0/5 | 0/3 | 17% [6–39%] | 25% |
+| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 0/5 | 5% [1–24%] | 15% |
+| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | – | 0% [0–20%] | 0% |
+| Qwen3 8B (reasoning), 1 run | – | – | 1/1 | – | 100% [21–100%] | – |
 
-The `wallet` scenario was added after these runs and has no submissions yet.
+The `wallet` runs were added on 2026-10-10 with the prompt study below (3 for the 14B model to save time, ~4 min per run).
+
+### Does a worked example help? (prompt v2)
+
+Prompt v2 is prompt v1 plus one step of the simulation worked out by hand: the first SELL in `portfolio`, a backordered order and its refill in `warehouse`, an overdraft in `ledger`, a currency conversion in `wallet` ([`worked_example.md`](bench/scenarios/portfolio/worked_example.md) in each scenario; every number is checked against a truncated reference run in the tests). Same models, same machine, 2026-10-10:
+
+| Model | Prompt | portfolio | warehouse | ledger | wallet | Pooled [95% CI] |
+| :--- | :--- | :---: | :---: | :---: | :---: | ---: |
+| Qwen2.5-Coder 14B | v1 | 3/5 | 0/5 | 0/5 | 0/3 | 3/18 [6–39%] |
+| | v2 | 1/3 | 0/3 | 0/3 | 0/3 | 1/12 [1–35%] |
+| Qwen2.5-Coder 7B | v1 | 1/5 | 0/5 | 0/5 | 0/5 | 1/20 [1–24%] |
+| | v2 | 0/5 | 0/5 | 0/5 | 0/5 | 0/20 [0–16%] |
+
+**No improvement.** Both models passed fewer runs with the example than without it, but the intervals overlap almost entirely, so the honest reading is "no measurable effect at this sample size", not "examples hurt". The 14B model got 3 v2 runs per scenario instead of 5 to keep the study to an afternoon, which widens its interval.
+
+The failures say why an example of one step does not fix the program as a whole:
+
+- **The example's own step is broken anyway.** One 14B and one 7B v2 portfolio program both return 3,749.96 (off by −13,322.04). Each consumes FIFO lots by counting `quantity` down to 0 and only then computes `revenue = quantity * price`, so every sale earns nothing — even though the worked example spells out `Revenue: 15 × 120 = 1800`.
+- **Rules outside the example stay missed.** Two of three 14B v2 wallet answers are +15.01 off, the reference with the monthly fee switched off exactly; the example shows a conversion, not the end-of-month check.
+- **Crashes don't go away.** 16 of the 31 failed v2 runs are crashes (`NameError`, `KeyError`, `IndexError`, `UnboundLocalError`, ...), the same state bugs as with prompt v1.
 
 What the runs show:
 
 - **Size helps, but only so far.** Doubling the coder model from 7B to 14B took portfolio from 1/5 to 3/5, yet warehouse and ledger stayed at 0/5 for every non-reasoning model.
 - **A reasoning model solved the ledger on its only try**, the first pass in 16 local ledger attempts. It cost ~16k output tokens (mostly thinking) and 27 minutes on this GPU versus ~1.3k tokens and ~4 minutes for the 14B coder; one run is a signal, not a result, and running 5 per scenario wasn't practical here.
-- **Most programs don't survive their own state.** Across the 7B, 8B and 14B models, a large share of failures are crashes from state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
+- **Most programs don't survive their own state.** With prompt v1, across the 7B, 8B and 14B models, a large share of failures are crashes from state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
 - **The dangerous failures are the quiet ones.** Several runs finished cleanly and were off by a few units on answers in the thousands (−14.73 and +17.03 on 6,553.73; +6.79; +18.31 on 17,072.00) — mistakes a reviewer would wave through.
 - **The diagnosis named a skipped rule once.** One 14B portfolio answer (+18.31) equals the reference with the 2% wealth tax switched off exactly, so that program most likely ignored the rule. Every other wrong answer matches no single or paired omission: those rules were implemented, but wrongly.
 
@@ -84,6 +103,9 @@ python generate.py anthropic:claude-opus-5 openai:<model-id> google:<model-id> -
 
 # local models through Ollama
 python generate.py ollama:qwen3-coder --scenario ledger --runs 5
+
+# prompt v2 (adds one worked step); saved as <model>-prompt-v2
+python generate.py ollama:qwen2.5-coder:14b --prompt-version 2 --runs 5
 
 python run_audit.py                   # score everything, rewrite the leaderboard
 python run_audit.py --sandbox docker  # the same, each submission in a locked-down container
@@ -111,6 +133,8 @@ Create `bench/scenarios/<name>/` with:
   It must be unambiguous: every ordering and rounding decision spelled out.
 - `reference.py` — a `run() -> float` that implements the spec exactly, with the
   tunable rules as module-level constants (so the tests can switch them off).
+- `worked_example.md` — one step computed by hand, used by prompt v2. Check its
+  numbers with a truncated reference run in `tests/test_scenarios.py`.
 
 Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
 
@@ -118,8 +142,8 @@ Then pin the answer and add rule mutants in `tests/test_scenarios.py`.
 
 ```
 bench/
-  scenarios/<name>/    prompt.md + reference.py for each scenario
-  prompting.py         shared instructions wrapped around every prompt (versioned)
+  scenarios/<name>/    prompt.md, reference.py and worked_example.md for each scenario
+  prompting.py         shared instructions wrapped around every prompt (v1, v2)
   providers.py         Anthropic / OpenAI / Google / Ollama clients (reply + token usage)
   pricing.py           list prices for the cost column
   extract.py           pulls the code block out of a reply

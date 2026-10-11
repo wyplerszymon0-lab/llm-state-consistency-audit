@@ -91,6 +91,22 @@ def test_score_all_classifies_every_run(submissions, monkeypatch):
     assert "Mixed †" in report
     assert "off by +0.50" in report
     assert PASS not in [r.status for r in mixed.runs["portfolio"]]
+    assert "Prompt v1 vs v2" not in report  # no model has v2 runs
+
+
+def test_report_compares_prompt_versions_on_shared_scenarios(tmp_path):
+    root = tmp_path / "submissions"
+    write(root / "portfolio" / "m" / "run_1.py", f"def run():\n    return {PORTFOLIO_ANSWER}\n")
+    write(root / "portfolio" / "m" / "run_2.py", "def run():\n    return 0.0\n")
+    write(root / "ledger" / "m" / "run_1.py", "def run():\n    return 0.0\n")  # no v2 runs: left out
+    v2 = root / "portfolio" / "m-prompt-v2"
+    write(v2 / "meta.json", json.dumps({"display_name": "m (prompt v2)"}))
+    for n in (1, 2):
+        write(v2 / f"run_{n}.py", f"def run():\n    return {PORTFOLIO_ANSWER}\n")
+
+    report = render(score_all(root))
+    assert "## Prompt v1 vs v2" in report
+    assert "| m | portfolio 1/2 → 2/2 | 1/2 [9%–91%] | 2/2 [34%–100%] |" in report
 
 
 # --- generate --------------------------------------------------------------
@@ -128,6 +144,26 @@ def test_generate_continues_numbering_and_survives_errors(tmp_path, monkeypatch)
     assert generate.main(["ollama:m", "--scenario", "ledger"]) == 0
     assert (tmp_path / "ledger" / "m" / "run_2.reply.md").exists()
     assert not (tmp_path / "ledger" / "m" / "run_2.py").exists()
+
+
+def test_generate_with_prompt_v2_saves_runs_separately(tmp_path, monkeypatch):
+    monkeypatch.setattr(generate, "SUBMISSIONS_DIR", tmp_path)
+    prompts = []
+
+    def fake(spec, prompt):
+        prompts.append(prompt)
+        return Reply("```python\ndef run():\n    return 1.0\n```")
+
+    monkeypatch.setattr(generate, "generate", fake)
+    assert generate.main(["ollama:m", "--scenario", "ledger", "--prompt-version", "2"]) == 0
+
+    model_dir = tmp_path / "ledger" / "m-prompt-v2"
+    meta = json.loads((model_dir / "meta.json").read_text(encoding="utf-8"))
+    assert meta == {"display_name": "m (prompt v2)", "model": "ollama:m", "prompt_version": 2}
+    assert json.loads((model_dir / "run_1.meta.json").read_text(encoding="utf-8"))["prompt_version"] == 2
+    assert "prompt v2" in (model_dir / "run_1.reply.md").read_text(encoding="utf-8")
+    assert "## Worked example" in prompts[0]
+    assert not (tmp_path / "ledger" / "m").exists()
 
 
 def test_slug():

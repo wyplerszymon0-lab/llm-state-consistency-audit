@@ -1,0 +1,8 @@
+{
+  "model": "ollama:qwen2.5-coder:14b",
+  "prompt_version": 2,
+  "latency_s": 263.94,
+  "input_tokens": 1405,
+  "output_tokens": 1229,
+  "cost_usd": 0.0
+}

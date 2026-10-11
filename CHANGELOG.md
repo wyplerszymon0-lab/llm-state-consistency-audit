@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Prompt version 2: the scenario plus one step worked out by hand
+  (`worked_example.md`, each checked against a truncated reference run in the tests).
+  `generate.py --prompt-version 2` saves runs as `<model>-prompt-v2`, and the
+  leaderboard compares both versions on the scenarios each model ran (#7).
+
 ## [1.0.0] - 2026-10-01
 
 First tagged release of the benchmark: three business-rule scenarios, a sandboxed

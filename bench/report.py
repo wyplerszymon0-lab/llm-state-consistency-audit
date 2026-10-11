@@ -5,9 +5,10 @@ from pathlib import Path
 from statistics import median
 
 from bench.diagnose import diagnose
-from bench.prompting import PROMPT_VERSION
+from bench.prompting import PROMPT_VERSION, run_dir_suffix
 from bench.scenarios import load_scenarios
 from bench.scoring import ERROR, PASS, ModelSummary
+from bench.stats import wilson_interval
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "reports" / "leaderboard.md"
 
@@ -53,12 +54,47 @@ def _usage_section(summaries: list[ModelSummary]) -> list[str]:
     ]
 
 
+def _prompt_section(summaries: list[ModelSummary], scenarios: list[str]) -> list[str]:
+    """v1 vs v2 for every model run with both prompts, on the scenarios both have runs for."""
+    by_dir = {s.model: s for s in summaries}
+    rows = []
+    for s in summaries:
+        v2 = by_dir.get(s.model + run_dir_suffix(2))
+        if v2 is None:
+            continue
+        shared = [n for n in scenarios if s.total(n) and v2.total(n)]
+        if not shared:
+            continue
+        cells = "; ".join(f"{n} {s.passes(n)}/{s.total(n)} → {v2.passes(n)}/{v2.total(n)}" for n in shared)
+        pooled = []
+        for summary in (s, v2):
+            passes = sum(summary.passes(n) for n in shared)
+            total = sum(summary.total(n) for n in shared)
+            lo, hi = wilson_interval(passes, total)
+            pooled.append(f"{passes}/{total} [{lo:.0%}–{hi:.0%}]")
+        rows.append(f"| {s.display_name} | {cells} | {pooled[0]} | {pooled[1]} |")
+    if not rows:
+        return []
+    return [
+        "",
+        "## Prompt v1 vs v2",
+        "",
+        "Prompt v2 adds one step of the simulation worked out by hand (`worked_example.md` in each "
+        "scenario). Cells are v1 → v2 passes; pooled columns give the 95% Wilson interval.",
+        "",
+        "| Model | Per scenario (v1 → v2) | Pooled v1 | Pooled v2 |",
+        "| :--- | :--- | ---: | ---: |",
+        *rows,
+    ]
+
+
 def render(summaries: list[ModelSummary]) -> str:
     scenarios = load_scenarios()
     lines = [
         "# LLM State-Consistency Audit — Leaderboard",
         "",
-        f"_Generated {date.today().isoformat()} by `run_audit.py` (prompt v{PROMPT_VERSION}). "
+        f"_Generated {date.today().isoformat()} by `run_audit.py` (prompt v{PROMPT_VERSION} "
+        "unless the model name says otherwise). "
         "Do not hand-edit — rerun the audit instead._",
         "",
         "A run **passes** only if its answer is within the scenario tolerance (0.01) of the "
@@ -88,6 +124,7 @@ def render(summaries: list[ModelSummary]) -> str:
         lines.append("")
         lines.extend(f"† **{s.display_name}**: {s.note}  " for s in notes)
 
+    lines += _prompt_section(summaries, list(scenarios))
     lines += _usage_section(summaries)
 
     lines += ["", "## Reference answers", "", "| Scenario | Answer |", "| :--- | ---: |"]

@@ -15,6 +15,7 @@ class Scenario:
     prompt: str
     reference: ModuleType
     tolerance: float = 0.01
+    worked_example: str | None = None  # used by prompt version 2
 
     @property
     def title(self) -> str:
@@ -37,5 +38,10 @@ def load_scenarios() -> dict[str, Scenario]:
             prompt=(path / "prompt.md").read_text(encoding="utf-8"),
             reference=reference,
             tolerance=getattr(reference, "TOLERANCE", 0.01),
+            worked_example=(
+                (path / "worked_example.md").read_text(encoding="utf-8")
+                if (path / "worked_example.md").is_file()
+                else None
+            ),
         )
     return scenarios
