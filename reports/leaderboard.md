@@ -1,6 +1,6 @@
 # LLM State-Consistency Audit — Leaderboard
 
-_Generated 2026-10-11 by `run_audit.py` (prompt v1 unless the model name says otherwise). Do not hand-edit — rerun the audit instead._
+_Generated 2026-10-17 by `run_audit.py` (prompt v1 unless the model name says otherwise). Do not hand-edit — rerun the audit instead._
 
 A run **passes** only if its answer is within the scenario tolerance (0.01) of the reference. Anything else — a wrong number, a crash, a timeout or no code — fails.
 
@@ -8,12 +8,14 @@ A run **passes** only if its answer is within the scenario tolerance (0.01) of t
 | ---: | :--- | :---: | :---: | :---: | :---: | ---: | ---: |
 | 1 | Gemini 3.1 Pro Reasoning † | – | 1/1 | – | – | 100% [21%–100%] | – |
 | 2 | qwen3:8b † | 1/1 | – | – | – | 100% [21%–100%] | – |
-| 3 | qwen2.5-coder:14b | 0/5 | 3/5 | 0/3 | 0/5 | 17% [6%–39%] | 25% |
-| 4 | qwen2.5-coder:14b (prompt v2) | 0/3 | 1/3 | 0/3 | 0/3 | 8% [1%–35%] | 25% |
-| 5 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 0/5 | 5% [1%–24%] | 15% |
-| 6 | qwen2.5-coder:7b (prompt v2) | 0/5 | 0/5 | 0/5 | 0/5 | 0% [0%–16%] | 0% |
-| 7 | llama3.1:8b | 0/5 | 0/5 | – | 0/5 | 0% [0%–20%] | 0% |
-| 8 | Baseline (partial drift) † | – | 0/1 | – | – | 0% [0%–79%] | – |
+| 3 | gpt-oss:20b | 4/5 | 5/5 | 5/5 | 4/5 | 90% [70%–97%] | 100% |
+| 4 | qwen3-coder:30b | 4/5 | 4/5 | 1/5 | 0/5 | 45% [26%–66%] | 65% |
+| 5 | qwen2.5-coder:14b | 0/5 | 3/5 | 0/3 | 0/5 | 17% [6%–39%] | 25% |
+| 6 | qwen2.5-coder:14b (prompt v2) | 0/3 | 1/3 | 0/3 | 0/3 | 8% [1%–35%] | 25% |
+| 7 | qwen2.5-coder:7b | 0/5 | 1/5 | 0/5 | 0/5 | 5% [1%–24%] | 15% |
+| 8 | qwen2.5-coder:7b (prompt v2) | 0/5 | 0/5 | 0/5 | 0/5 | 0% [0%–16%] | 0% |
+| 9 | llama3.1:8b | 0/5 | 0/5 | – | 0/5 | 0% [0%–20%] | 0% |
+| 10 | Baseline (partial drift) † | – | 0/1 | – | – | 0% [0%–79%] | – |
 
 *Pass rate* pools every run of the model; the 95% Wilson interval shows how much it could move with more runs. *pass@3* is the unbiased estimate (Chen et al., 2021) of the chance that at least one of 3 attempts passes, averaged over scenarios with at least 3 runs.
 
@@ -37,6 +39,8 @@ Recorded by `generate.py` for each run (runs made before it recorded usage are l
 | Model | Runs | Median latency | Median output tokens | Total cost | Cost per passed run |
 | :--- | ---: | ---: | ---: | ---: | ---: |
 | qwen3:8b | 1 | 1634 s | 15,883 | $0.00 | $0.00 |
+| gpt-oss:20b | 20 | 202 s | 3,852 | $0.00 | $0.00 |
+| qwen3-coder:30b | 20 | 71 s | 1,501 | $0.00 | $0.00 |
 | qwen2.5-coder:14b | 18 | 237 s | 1,218 | $0.00 | $0.00 |
 | qwen2.5-coder:14b (prompt v2) | 12 | 207 s | 1,155 | $0.00 | $0.00 |
 | qwen2.5-coder:7b | 5 | 27 s | 1,226 | $0.00 | no passes |
@@ -57,6 +61,19 @@ For every wrong answer the audit also runs the reference with each rule, and eac
 
 | Model | Scenario | Run | Status | Answer | Expected | Detail |
 | :--- | :--- | :--- | :--- | ---: | ---: | :--- |
+| gpt-oss-20b | ledger | run_2 | wrong | 6543.71 | 6553.73 | off by -10.02 |
+| gpt-oss-20b | warehouse | run_4 | wrong | 472.01 | 622.67 | off by -150.66 |
+| qwen3-coder-30b | ledger | run_4 | wrong | 6543.71 | 6553.73 | off by -10.02 |
+| qwen3-coder-30b | portfolio | run_2 | error | – | 17072.00 | `ValueError` |
+| qwen3-coder-30b | wallet | run_1 | wrong | 2395.13 | 2351.14 | off by +43.99 |
+| qwen3-coder-30b | wallet | run_2 | wrong | 2327.86 | 2351.14 | off by -23.28 · equals the answer without: premium spread |
+| qwen3-coder-30b | wallet | run_3 | wrong | -45.00 | 2351.14 | off by -2396.14 |
+| qwen3-coder-30b | wallet | run_4 | wrong | 2366.70 | 2351.14 | off by +15.56 |
+| qwen3-coder-30b | warehouse | run_1 | wrong | 418.08 | 622.67 | off by -204.59 |
+| qwen3-coder-30b | warehouse | run_2 | wrong | 418.08 | 622.67 | off by -204.59 |
+| qwen3-coder-30b | warehouse | run_3 | wrong | 973.18 | 622.67 | off by +350.51 |
+| qwen3-coder-30b | warehouse | run_4 | error | – | 622.67 | `RuntimeError` |
+| qwen3-coder-30b | warehouse | run_5 | wrong | 973.18 | 622.67 | off by +350.51 |
 | qwen2.5-coder-14b | ledger | run_1 | wrong | 7260.38 | 6553.73 | off by +706.65 |
 | qwen2.5-coder-14b | ledger | run_2 | wrong | 6560.52 | 6553.73 | off by +6.79 |
 | qwen2.5-coder-14b | ledger | run_3 | wrong | 18605.26 | 6553.73 | off by +12051.53 |
