@@ -12,6 +12,9 @@ and the project follows [Semantic Versioning](https://semver.org/).
   (`worked_example.md`, each checked against a truncated reference run in the tests).
   `generate.py --prompt-version 2` saves runs as `<model>-prompt-v2`, and the
   leaderboard compares both versions on the scenarios each model ran (#7).
+- gpt-oss 20B and Qwen3-Coder 30B, 5 runs per scenario: 18/20 and 9/20, the first
+  local passes on warehouse. Both failed one ledger run with the same cross-account
+  minimum-balance bug (#8).
 
 ## [1.0.0] - 2026-10-01
 

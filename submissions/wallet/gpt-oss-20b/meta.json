@@ -1,0 +1,5 @@
+{
+  "display_name": "gpt-oss:20b",
+  "model": "ollama:gpt-oss:20b",
+  "prompt_version": 1
+}

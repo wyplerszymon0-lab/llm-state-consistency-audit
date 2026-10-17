@@ -1,0 +1,8 @@
+{
+  "model": "ollama:gpt-oss:20b",
+  "prompt_version": 1,
+  "latency_s": 309.09,
+  "input_tokens": 1282,
+  "output_tokens": 3795,
+  "cost_usd": 0.0
+}

@@ -52,16 +52,18 @@ The `wallet` prompt was also checked the other way round: a second implementatio
 
 ## Results so far
 
-Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Prompt v1, run locally through Ollama on a laptop with an 8 GB GPU, 2026-09-26 to 10-10:
+Full table: **[live leaderboard](https://wyplerszymon0-lab.github.io/llm-state-consistency-audit/)** (rebuilt on every push) or [`reports/leaderboard.md`](reports/leaderboard.md). Prompt v1, run locally through Ollama on a laptop with an 8 GB GPU (RTX 5050) and 32 GB RAM, 2026-09-26 to 10-16:
 
-| Model | portfolio | warehouse | ledger | wallet | Pass rate [95% CI] | pass@3 |
-| :--- | :---: | :---: | :---: | :---: | ---: | ---: |
-| Qwen2.5-Coder 14B | 3/5 | 0/5 | 0/5 | 0/3 | 17% [6–39%] | 25% |
-| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 0/5 | 5% [1–24%] | 15% |
-| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | – | 0% [0–20%] | 0% |
-| Qwen3 8B (reasoning), 1 run | – | – | 1/1 | – | 100% [21–100%] | – |
+| Model | portfolio | warehouse | ledger | wallet | Pass rate [95% CI] | pass@3 | Median time per run |
+| :--- | :---: | :---: | :---: | :---: | ---: | ---: | ---: |
+| gpt-oss 20B (reasoning, MoE) | 5/5 | 4/5 | 4/5 | 5/5 | **90% [70–97%]** | 100% | 202 s |
+| Qwen3-Coder 30B (MoE) | 4/5 | 0/5 | 4/5 | 1/5 | 45% [26–66%] | 65% | 71 s |
+| Qwen2.5-Coder 14B | 3/5 | 0/5 | 0/5 | 0/3 | 17% [6–39%] | 25% | 237 s |
+| Qwen2.5-Coder 7B | 1/5 | 0/5 | 0/5 | 0/5 | 5% [1–24%] | 15% | 27 s |
+| Llama 3.1 8B | 0/5 | 0/5 | 0/5 | – | 0% [0–20%] | 0% | – |
+| Qwen3 8B (reasoning), 1 run | – | – | 1/1 | – | 100% [21–100%] | – | 1,634 s |
 
-The `wallet` runs were added on 2026-10-10 with the prompt study below (3 for the 14B model to save time, ~4 min per run).
+The `wallet` runs were added on 2026-10-10 with the prompt study below (3 for the 14B model to save time, ~4 min per run). gpt-oss and Qwen3-Coder were added on 2026-10-16 (issue #8): both are mixture-of-experts models (about 3–4B parameters active per token), which is why a 20–30B model runs on an 8 GB GPU with the rest in system RAM. Median times are this laptop's and include each model's first run, which also loads the model (746 s and 250 s).
 
 ### Does a worked example help? (prompt v2)
 
@@ -84,11 +86,12 @@ The failures say why an example of one step does not fix the program as a whole:
 
 What the runs show:
 
-- **Size helps, but only so far.** Doubling the coder model from 7B to 14B took portfolio from 1/5 to 3/5, yet warehouse and ledger stayed at 0/5 for every non-reasoning model.
+- **A newer generation changed the picture more than size did.** Doubling Qwen2.5-Coder from 7B to 14B took portfolio from 1/5 to 3/5 and left warehouse and ledger at 0/5. Qwen3-Coder 30B passed ledger 4/5, and gpt-oss 20B, which reasons before it writes code, passed 18 of 20 runs, including the first local passes on warehouse (4/5). Its interval (70–97%) does not overlap the 14B coder's (6–39%), so that gap is not luck of the draw.
+- **Two models, one bug.** gpt-oss and Qwen3-Coder each failed one ledger run with exactly the same answer, 6,543.71 (−10.02). Both track the period's lowest balance across all three accounts instead of per account, so a low balance in one account charges the 5.00 maintenance fee to every account. Running the reference with the minimum shared across accounts gives 6,543.71 to the cent. This cross-account state leak is the kind of bug the benchmark was built to catch.
 - **A reasoning model solved the ledger on its only try**, the first pass in 16 local ledger attempts. It cost ~16k output tokens (mostly thinking) and 27 minutes on this GPU versus ~1.3k tokens and ~4 minutes for the 14B coder; one run is a signal, not a result, and running 5 per scenario wasn't practical here.
 - **Most programs don't survive their own state.** With prompt v1, across the 7B, 8B and 14B models, a large share of failures are crashes from state bugs rather than typos: `UnboundLocalError` and `NameError` from accumulators assigned inside nested functions, a `nonlocal` that points nowhere, `Decimal` mixed with `float`, a `run()` written as a class method.
 - **The dangerous failures are the quiet ones.** Several runs finished cleanly and were off by a few units on answers in the thousands (−14.73 and +17.03 on 6,553.73; +6.79; +18.31 on 17,072.00) — mistakes a reviewer would wave through.
-- **The diagnosis named a skipped rule once.** One 14B portfolio answer (+18.31) equals the reference with the 2% wealth tax switched off exactly, so that program most likely ignored the rule. Every other wrong answer matches no single or paired omission: those rules were implemented, but wrongly.
+- **The diagnosis names a skipped rule only now and then.** 5 of the 94 failed runs in the leaderboard equal the reference with one or two rules switched off exactly (the 2% wealth tax once, the monthly fee or the premium spread in wallet four times), so those programs most likely ignored the rule. The other wrong answers match no single or paired omission: the rules were implemented, but wrongly, like the shared minimum above.
 
 Cost and speed per model are in the leaderboard (every local run costs $0; latency is this laptop's). The table becomes truly informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`).
 
