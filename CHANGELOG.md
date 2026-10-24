@@ -15,6 +15,8 @@ and the project follows [Semantic Versioning](https://semver.org/).
 - gpt-oss 20B and Qwen3-Coder 30B, 5 runs per scenario: 18/20 and 9/20, the first
   local passes on warehouse. Both failed one ledger run with the same cross-account
   minimum-balance bug (#8).
+- Accuracy vs. time chart (pass rate with its Wilson interval against median seconds per run),
+  written next to the leaderboard as SVG and inlined on the Pages site with per-point tooltips (#21).
 
 ## [1.0.0] - 2026-10-01
 

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="100%" role="img" aria-labelledby="avt-title avt-desc">
+<title id="avt-title">Pass rate against median time per run</title>
+<desc id="avt-desc">One point per model: x is the median seconds per run on a log scale, y is the pass rate, the vertical bar its 95 % Wilson interval.</desc>
+<style>
+  .surface { fill: #fcfcfb; }
+  .grid { stroke: #e1e0d9; stroke-width: 1; }
+  .axis-text { fill: #52514e; font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .label { fill: #0b0b0b; font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .interval { stroke: #2a78d6; stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+  .dot { fill: #2a78d6; stroke: #fcfcfb; stroke-width: 2; }
+  @media (prefers-color-scheme: dark) {
+    .surface { fill: #1a1a19; }
+    .grid { stroke: #2c2c2a; }
+    .axis-text { fill: #c3c2b7; }
+    .label { fill: #f0efec; }
+    .interval { stroke: #3987e5; }
+    .dot { fill: #3987e5; stroke: #1a1a19; }
+  }
+</style>
+<rect class="surface" width="760" height="420" rx="6"/>
+<line class="grid" x1="64" x2="610" y1="368.0" y2="368.0"/>
+<text class="axis-text" x="56" y="372.0" text-anchor="end">0%</text>
+<line class="grid" x1="64" x2="610" y1="283.0" y2="283.0"/>
+<text class="axis-text" x="56" y="287.0" text-anchor="end">25%</text>
+<line class="grid" x1="64" x2="610" y1="198.0" y2="198.0"/>
+<text class="axis-text" x="56" y="202.0" text-anchor="end">50%</text>
+<line class="grid" x1="64" x2="610" y1="113.0" y2="113.0"/>
+<text class="axis-text" x="56" y="117.0" text-anchor="end">75%</text>
+<line class="grid" x1="64" x2="610" y1="28.0" y2="28.0"/>
+<text class="axis-text" x="56" y="32.0" text-anchor="end">100%</text>
+<line class="grid" x1="86.6" x2="86.6" y1="28" y2="368"/>
+<text class="axis-text" x="86.6" y="386" text-anchor="middle">10 s</text>
+<line class="grid" x1="194.6" x2="194.6" y1="28" y2="368"/>
+<text class="axis-text" x="194.6" y="386" text-anchor="middle">30 s</text>
+<line class="grid" x1="262.7" x2="262.7" y1="28" y2="368"/>
+<text class="axis-text" x="262.7" y="386" text-anchor="middle">1 min</text>
+<line class="grid" x1="370.6" x2="370.6" y1="28" y2="368"/>
+<text class="axis-text" x="370.6" y="386" text-anchor="middle">3 min</text>
+<line class="grid" x1="489.0" x2="489.0" y1="28" y2="368"/>
+<text class="axis-text" x="489.0" y="386" text-anchor="middle">10 min</text>
+<line class="grid" x1="596.9" x2="596.9" y1="28" y2="368"/>
+<text class="axis-text" x="596.9" y="386" text-anchor="middle">30 min</text>
+<text class="axis-text" x="337.0" y="410" text-anchor="middle">Median time per run (log scale) — faster to the left</text>
+<text class="axis-text" transform="translate(16 198.0) rotate(-90)" text-anchor="middle">Pass rate, 95 % interval</text>
+<g><title>qwen3:8b: 1/1 run passed (100%, 95 % interval 21%–100%), median 1634 s per run</title>
+<line class="interval" x1="587.4" x2="587.4" y1="28.0" y2="297.8"/>
+<circle class="dot" cx="587.4" cy="28.0" r="5"/>
+<text class="label" x="597.4" y="32.3">qwen3:8b</text>
+</g>
+<g><title>gpt-oss:20b: 18/20 runs passed (90%, 95 % interval 70%–97%), median 202 s per run</title>
+<line class="interval" x1="381.8" x2="381.8" y1="37.5" y2="130.4"/>
+<circle class="dot" cx="381.8" cy="62.0" r="5"/>
+<text class="label" x="391.8" y="60.3">gpt-oss:20b</text>
+</g>
+<g><title>qwen3-coder:30b: 9/20 runs passed (45%, 95 % interval 26%–66%), median 71 s per run</title>
+<line class="interval" x1="278.6" x2="278.6" y1="144.3" y2="280.2"/>
+<circle class="dot" cx="278.6" cy="215.0" r="5"/>
+<text class="label" x="288.6" y="213.3">qwen3-coder:30b</text>
+</g>
+<g><title>qwen2.5-coder:14b: 3/18 runs passed (17%, 95 % interval 6%–39%), median 237 s per run</title>
+<line class="interval" x1="397.8" x2="397.8" y1="234.6" y2="348.2"/>
+<circle class="dot" cx="397.8" cy="311.3" r="5"/>
+<text class="label" x="407.8" y="309.7">qwen2.5-coder:14b</text>
+</g>
+<g><title>qwen2.5-coder:14b (prompt v2): 1/12 runs passed (8%, 95 % interval 1%–35%), median 207 s per run</title>
+<line class="interval" x1="384.1" x2="384.1" y1="247.7" y2="362.9"/>
+<circle class="dot" cx="384.1" cy="339.7" r="5"/>
+<text class="label" x="394.1" y="338.0">qwen2.5-coder:14b (prompt v2)</text>
+</g>
+<g><title>qwen2.5-coder:7b: 1/20 runs passed (5%, 95 % interval 1%–24%), median 27 s per run</title>
+<line class="interval" x1="184.5" x2="184.5" y1="287.7" y2="365.0"/>
+<circle class="dot" cx="184.5" cy="351.0" r="5"/>
+<text class="label" x="194.5" y="353.0">qwen2.5-coder:7b</text>
+</g>
+<g><title>qwen2.5-coder:7b (prompt v2): 0/20 runs passed (0%, 95 % interval 0%–16%), median 32 s per run</title>
+<line class="interval" x1="200.8" x2="200.8" y1="313.2" y2="368.0"/>
+<circle class="dot" cx="200.8" cy="368.0" r="5"/>
+<text class="label" x="210.8" y="368.0">qwen2.5-coder:7b (prompt v2)</text>
+</g>
+</svg>
