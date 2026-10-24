@@ -1,6 +1,6 @@
 # LLM State-Consistency Audit — Leaderboard
 
-_Generated 2026-10-17 by `run_audit.py` (prompt v1 unless the model name says otherwise). Do not hand-edit — rerun the audit instead._
+_Generated 2026-10-24 by `run_audit.py` (prompt v1 unless the model name says otherwise). Do not hand-edit — rerun the audit instead._
 
 A run **passes** only if its answer is within the scenario tolerance (0.01) of the reference. Anything else — a wrong number, a crash, a timeout or no code — fails.
 
@@ -31,6 +31,12 @@ Prompt v2 adds one step of the simulation worked out by hand (`worked_example.md
 | :--- | :--- | ---: | ---: |
 | qwen2.5-coder:14b | ledger 0/5 → 0/3; portfolio 3/5 → 1/3; wallet 0/3 → 0/3; warehouse 0/5 → 0/3 | 3/18 [6%–39%] | 1/12 [1%–35%] |
 | qwen2.5-coder:7b | ledger 0/5 → 0/5; portfolio 1/5 → 0/5; wallet 0/5 → 0/5; warehouse 0/5 → 0/5 | 1/20 [1%–24%] | 0/20 [0%–16%] |
+
+## Accuracy vs. time
+
+![Pass rate against median time per run, one point per model](accuracy_vs_time.svg)
+
+Each point is a model that recorded its latency; the vertical bar is the 95 % Wilson interval of its pass rate. Up and to the left is better. Times are this laptop's (local models through Ollama).
 
 ## Cost and speed
 

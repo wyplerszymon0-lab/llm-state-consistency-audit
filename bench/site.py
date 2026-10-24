@@ -5,6 +5,7 @@ Usage:
     python -m bench.site IN.md OUT.html
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -37,6 +38,7 @@ PAGE = """<!doctype html>
   th, td {{ padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }}
   th {{ background: var(--head); font-weight: 600; }}
   footer {{ margin-top: 40px; font-size: 13px; color: var(--muted); }}
+  figure.chart {{ margin: 8px 0 0; max-width: 760px; }}
 </style>
 </head>
 <body>
@@ -49,8 +51,20 @@ PAGE = """<!doctype html>
 """
 
 
-def render(markdown_text: str) -> str:
+def inline_svgs(body: str, base: Path) -> str:
+    """Replace <img src="x.svg"> with the SVG itself, so its tooltips and colours work on the page."""
+
+    def swap(m: re.Match) -> str:
+        path = base / m.group(1)
+        return f'<figure class="chart">{path.read_text(encoding="utf-8")}</figure>' if path.is_file() else m.group(0)
+
+    return re.sub(r'<img[^>]*src="([^"/]+\.svg)"[^>]*/?>', swap, body)
+
+
+def render(markdown_text: str, base: Path | None = None) -> str:
     body = markdown.markdown(markdown_text, extensions=["tables"], output_format="html")
+    if base is not None:
+        body = inline_svgs(body, base)
     # Wide tables scroll inside their own box instead of widening the page on phones.
     body = body.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
     return PAGE.format(body=body, repo=REPO_URL)
@@ -60,7 +74,7 @@ def main(argv: list[str]) -> None:
     source = Path(argv[0]) if argv else ROOT / "reports" / "leaderboard.md"
     target = Path(argv[1]) if len(argv) > 1 else ROOT / "site" / "index.html"
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(render(source.read_text(encoding="utf-8")), encoding="utf-8")
+    target.write_text(render(source.read_text(encoding="utf-8"), base=source.parent), encoding="utf-8")
     print(f"wrote {target}")
 
 

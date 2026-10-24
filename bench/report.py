@@ -4,6 +4,7 @@ from datetime import date
 from pathlib import Path
 from statistics import median
 
+from bench.chart import accuracy_vs_time_svg
 from bench.diagnose import diagnose
 from bench.prompting import PROMPT_VERSION, run_dir_suffix
 from bench.scenarios import load_scenarios
@@ -11,6 +12,7 @@ from bench.scoring import ERROR, PASS, ModelSummary
 from bench.stats import wilson_interval
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "reports" / "leaderboard.md"
+CHART_NAME = "accuracy_vs_time.svg"  # written next to the report
 
 
 def _cell(summary: ModelSummary, scenario: str) -> str:
@@ -88,6 +90,20 @@ def _prompt_section(summaries: list[ModelSummary], scenarios: list[str]) -> list
     ]
 
 
+def _chart_section(summaries: list[ModelSummary]) -> list[str]:
+    if accuracy_vs_time_svg(summaries) is None:
+        return []
+    return [
+        "",
+        "## Accuracy vs. time",
+        "",
+        f"![Pass rate against median time per run, one point per model]({CHART_NAME})",
+        "",
+        "Each point is a model that recorded its latency; the vertical bar is the 95 % Wilson interval of "
+        "its pass rate. Up and to the left is better. Times are this laptop's (local models through Ollama).",
+    ]
+
+
 def render(summaries: list[ModelSummary]) -> str:
     scenarios = load_scenarios()
     lines = [
@@ -125,6 +141,7 @@ def render(summaries: list[ModelSummary]) -> str:
         lines.extend(f"† **{s.display_name}**: {s.note}  " for s in notes)
 
     lines += _prompt_section(summaries, list(scenarios))
+    lines += _chart_section(summaries)
     lines += _usage_section(summaries)
 
     lines += ["", "## Reference answers", "", "| Scenario | Answer |", "| :--- | ---: |"]
@@ -165,4 +182,7 @@ def render(summaries: list[ModelSummary]) -> str:
 def write_report(summaries: list[ModelSummary], path: Path = REPORT_PATH) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render(summaries), encoding="utf-8")
+    svg = accuracy_vs_time_svg(summaries)
+    if svg is not None:
+        (path.parent / CHART_NAME).write_text(svg, encoding="utf-8")
     return path

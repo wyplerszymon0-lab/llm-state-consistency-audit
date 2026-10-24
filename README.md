@@ -93,7 +93,7 @@ What the runs show:
 - **The dangerous failures are the quiet ones.** Several runs finished cleanly and were off by a few units on answers in the thousands (−14.73 and +17.03 on 6,553.73; +6.79; +18.31 on 17,072.00) — mistakes a reviewer would wave through.
 - **The diagnosis names a skipped rule only now and then.** 5 of the 94 failed runs in the leaderboard equal the reference with one or two rules switched off exactly (the 2% wealth tax once, the monthly fee or the premium spread in wallet four times), so those programs most likely ignored the rule. The other wrong answers match no single or paired omission: the rules were implemented, but wrongly, like the shared minimum above.
 
-Cost and speed per model are in the leaderboard (every local run costs $0; latency is this laptop's). The table becomes truly informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`).
+Cost and speed per model are in the leaderboard (every local run costs $0; latency is this laptop's), with a chart of pass rate against median time per run ([`reports/accuracy_vs_time.svg`](reports/accuracy_vs_time.svg)): gpt-oss is the most accurate local model, Qwen3-Coder answers about three times faster at half the pass rate. The table becomes truly informative once frontier models are added (`python generate.py anthropic:<model> openai:<model> google:<model> --runs 5`).
 
 ## Usage
 
